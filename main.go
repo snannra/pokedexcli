@@ -4,7 +4,9 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"time"
 
+	"github.com/snannra/pokedexcli/internal/pokecache"
 	"github.com/snannra/pokedexcli/internal/repl"
 )
 
@@ -12,6 +14,7 @@ func main() {
 	cfg := &repl.Config{
 		Next:     "https://pokeapi.co/api/v2/location-area/",
 		Previous: "",
+		Cache:    pokecache.NewCache(5 * time.Second),
 	}
 	var commands map[string]repl.CliCommand
 	commands = map[string]repl.CliCommand{
@@ -30,13 +33,18 @@ func main() {
 			Description: "Lists previous locations in pokemon map",
 			Callback:    repl.CommandMapB,
 		},
+		"explore": {
+			Name:        "explore",
+			Description: "Explore a location area to see which Pokémon can be found there",
+			Callback:    repl.CommandExplore,
+		},
 	}
 
 	commands["help"] = repl.CliCommand{
 		Name:        "help",
 		Description: "Displays a help message",
-		Callback: func(cfg *repl.Config) error {
-			fmt.Println("Usage:\n")
+		Callback: func(cfg *repl.Config, _ *string) error {
+			fmt.Println("Usage:")
 			for _, cmd := range commands {
 				fmt.Printf("%s: %s\n", cmd.Name, cmd.Description)
 			}
@@ -49,9 +57,18 @@ func main() {
 		fmt.Print("Pokedex > ")
 		scanner.Scan()
 		input := scanner.Text()
-		command := repl.CleanInput(input)[0]
+		cleanedInput := repl.CleanInput(input)
+		command := cleanedInput[0]
 		if cmd, exists := commands[command]; exists {
-			err := cmd.Callback(cfg)
+			if command == "explore" {
+				location := cleanedInput[1]
+				err := cmd.Callback(cfg, &location)
+				if err != nil {
+					fmt.Printf("Error executing command %q: %v\n", command, err)
+				}
+				continue
+			}
+			err := cmd.Callback(cfg, nil)
 			if err != nil {
 				fmt.Printf("Error executing command %q: %v\n", command, err)
 			}
