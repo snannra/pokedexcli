@@ -59,16 +59,12 @@ func main() {
 		input := scanner.Text()
 		cleanedInput := repl.CleanInput(input)
 		command := cleanedInput[0]
+		var argTwo string
+		if len(cleanedInput) > 1 {
+			argTwo = cleanedInput[1]
+		}
 		if cmd, exists := commands[command]; exists {
-			if command == "explore" {
-				location := cleanedInput[1]
-				err := cmd.Callback(cfg, &location)
-				if err != nil {
-					fmt.Printf("Error executing command %q: %v\n", command, err)
-				}
-				continue
-			}
-			err := cmd.Callback(cfg, nil)
+			err := cmd.Callback(cfg, &argTwo)
 			if err != nil {
 				fmt.Printf("Error executing command %q: %v\n", command, err)
 			}
