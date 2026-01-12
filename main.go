@@ -4,39 +4,41 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+
+	"github.com/snannra/pokedexcli/internal/repl"
 )
 
 func main() {
-	cfg := &config{
+	cfg := &repl.Config{
 		Next:     "https://pokeapi.co/api/v2/location-area/",
 		Previous: "",
 	}
-	var commands map[string]cliCommand
-	commands = map[string]cliCommand{
+	var commands map[string]repl.CliCommand
+	commands = map[string]repl.CliCommand{
 		"exit": {
-			name:        "exit",
-			description: "Exit the Pokedex",
-			callback:    commandExit,
+			Name:        "exit",
+			Description: "Exit the Pokedex",
+			Callback:    repl.CommandExit,
 		},
 		"map": {
-			name:        "map",
-			description: "Lists locations in pokemon map",
-			callback:    commandMap,
+			Name:        "map",
+			Description: "Lists locations in pokemon map",
+			Callback:    repl.CommandMap,
 		},
 		"mapb": {
-			name:        "mapb",
-			description: "Lists previous locations in pokemon map",
-			callback:    commandMapB,
+			Name:        "mapb",
+			Description: "Lists previous locations in pokemon map",
+			Callback:    repl.CommandMapB,
 		},
 	}
 
-	commands["help"] = cliCommand{
-		name:        "help",
-		description: "Displays a help message",
-		callback: func(cfg *config) error {
+	commands["help"] = repl.CliCommand{
+		Name:        "help",
+		Description: "Displays a help message",
+		Callback: func(cfg *repl.Config) error {
 			fmt.Println("Usage:\n")
 			for _, cmd := range commands {
-				fmt.Printf("%s: %s\n", cmd.name, cmd.description)
+				fmt.Printf("%s: %s\n", cmd.Name, cmd.Description)
 			}
 			return nil
 		},
@@ -47,9 +49,9 @@ func main() {
 		fmt.Print("Pokedex > ")
 		scanner.Scan()
 		input := scanner.Text()
-		command := cleanInput(input)[0]
+		command := repl.CleanInput(input)[0]
 		if cmd, exists := commands[command]; exists {
-			err := cmd.callback(cfg)
+			err := cmd.Callback(cfg)
 			if err != nil {
 				fmt.Printf("Error executing command %q: %v\n", command, err)
 			}

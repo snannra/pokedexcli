@@ -1,12 +1,34 @@
-package pokeapi
+package repl
 
 import (
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"github.com/snannra/pokedexcli/internal/pokeapi"
+	"os"
+	"strings"
 )
+
+type Config struct {
+	Next     string
+	Previous string
+}
+
+type CliCommand struct {
+	Name        string
+	Description string
+	Callback    func(*Config) error
+}
+
+func CleanInput(text string) []string {
+	return strings.Fields(strings.ToLower(text))
+}
+
+func CommandExit(cfg *Config) error {
+	fmt.Println("Closing the Pokedex... Goodbye!")
+	os.Exit(0)
+	return nil
+}
 
 type locationAreaListResp struct {
 	Next     *string `json:"next"`
@@ -16,7 +38,7 @@ type locationAreaListResp struct {
 	} `json:"results"`
 }
 
-func commandMap(cfg *pokeapi.config) error {
+func CommandMap(cfg *Config) error {
 	const baseLocationAreaURL = "https://pokeapi.co/api/v2/location-area/"
 
 	url := cfg.Next
@@ -59,7 +81,7 @@ func commandMap(cfg *pokeapi.config) error {
 	return nil
 }
 
-func commandMapB(cfg *config) error {
+func CommandMapB(cfg *Config) error {
 	if cfg.Previous == "" {
 		fmt.Println("you're on the first page")
 		return nil
