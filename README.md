@@ -82,4 +82,4 @@ Pokedex > mapb
 canalave-city-area
 ...
 
-Pokedex > explore pikachu
+Pokedex > explore canalave-city-area

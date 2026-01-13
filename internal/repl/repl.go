@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"os"
 	"strings"
@@ -11,10 +12,28 @@ import (
 	"github.com/snannra/pokedexcli/internal/pokecache"
 )
 
+type Pokemon struct {
+	BaseExperience int `json:"base_experience"`
+	Height         int `json:"height"`
+	Weight         int `json:"weight"`
+	Stats          []struct {
+		BaseStat int `json:"base_stat"`
+		Stat     struct {
+			Name string `json:"name"`
+		} `json:"stat"`
+	} `json:"stats"`
+	Types []struct {
+		Type struct {
+			Name string `json:"name"`
+		} `json:"type"`
+	} `json:"types"`
+}
+
 type Config struct {
 	Next     string
 	Previous string
 	Cache    *pokecache.Cache
+	PokeDex  map[string]Pokemon
 }
 
 type CliCommand struct {
@@ -199,6 +218,75 @@ func CommandExplore(cfg *Config, location *string) error {
 
 	for _, p := range out.PokemonEncounters {
 		fmt.Println(" - " + p.Pokemon.Name)
+	}
+
+	return nil
+}
+
+func CommandCatch(cfg *Config, pokemonName *string) error {
+	fmt.Printf("Throwing a Pokeball at %s...\n", *pokemonName)
+
+	pokemonURL := "https://pokeapi.co/api/v2/pokemon/" + *pokemonName + "/"
+
+	req, err := http.Get(pokemonURL)
+	if err != nil {
+		return fmt.Errorf("get pokemon data: %w", err)
+	}
+
+	data, err := io.ReadAll(req.Body)
+	if err != nil {
+		return fmt.Errorf("read pokemon data: %w", err)
+	}
+
+	var pokeData Pokemon
+	if err := json.Unmarshal(data, &pokeData); err != nil {
+		return fmt.Errorf("unmarshal pokemon data: %w", err)
+	}
+
+	threshold := pokeData.BaseExperience - 70
+	catchChance := rand.Intn(pokeData.BaseExperience)
+
+	if catchChance > threshold {
+		fmt.Printf("%s was caught!\n", *pokemonName)
+		cfg.PokeDex[*pokemonName] = pokeData
+	} else {
+		fmt.Printf("%s escaped!\n", *pokemonName)
+	}
+
+	return nil
+}
+
+func CommandInspect(cfg *Config, pokemonName *string) error {
+	pokeData, exists := cfg.PokeDex[*pokemonName]
+	if !exists {
+		fmt.Println("you have not caugh that pokemon")
+		return nil
+	}
+
+	fmt.Printf("Name: %s\n", *pokemonName)
+	fmt.Printf("Height: %d\n", pokeData.Height)
+	fmt.Printf("Weight: %d\n", pokeData.Weight)
+	fmt.Printf("Stats:")
+	for _, stat := range pokeData.Stats {
+		fmt.Printf("\n -%s: %d", stat.Stat.Name, stat.BaseStat)
+	}
+	fmt.Printf("\nTypes:")
+	for _, t := range pokeData.Types {
+		fmt.Printf("\n -%s", t.Type.Name)
+	}
+	fmt.Println()
+
+	return nil
+}
+
+func CommandPokedex(cfg *Config, _ *string) error {
+	if len(cfg.PokeDex) == 0 {
+		return fmt.Errorf("no pokemon caught yet")
+	}
+
+	fmt.Println("Your Pokedex:")
+	for name := range cfg.PokeDex {
+		fmt.Printf("- %s\n", name)
 	}
 
 	return nil

@@ -15,6 +15,7 @@ func main() {
 		Next:     "https://pokeapi.co/api/v2/location-area/",
 		Previous: "",
 		Cache:    pokecache.NewCache(5 * time.Second),
+		PokeDex:  make(map[string]repl.Pokemon),
 	}
 	var commands map[string]repl.CliCommand
 	commands = map[string]repl.CliCommand{
@@ -37,6 +38,21 @@ func main() {
 			Name:        "explore",
 			Description: "Explore a location area to see which Pokémon can be found there",
 			Callback:    repl.CommandExplore,
+		},
+		"catch": {
+			Name:        "catch",
+			Description: "Catch a pokemon by choosing it's name",
+			Callback:    repl.CommandCatch,
+		},
+		"inspect": {
+			Name:        "inspect",
+			Description: "Inspect a caught pokemon by choosing it's name",
+			Callback:    repl.CommandInspect,
+		},
+		"pokedex": {
+			Name:        "pokedex",
+			Description: "Lists all caught pokemon in your pokedex",
+			Callback:    repl.CommandPokedex,
 		},
 	}
 
